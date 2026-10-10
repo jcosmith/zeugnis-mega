@@ -69,6 +69,13 @@ Hinweise je Plattform:
 - **Android-Emulator:** Adresse `http://10.0.2.2:11434`. Auf einem echten Gerät
   die IP des Rechners eintragen und Ollama mit `OLLAMA_HOST=0.0.0.0` starten.
 
+## Android-APK
+
+Ein Tag `v*` (z. B. `v0.1.0`) baut über GitHub Actions eine APK und hängt sie an
+ein GitHub-Release (Workflow `release-apk.yml`). Die APK ist mit dem
+Debug-Schlüssel signiert: Sie lässt sich direkt installieren, ist aber nicht für
+den Play Store gedacht.
+
 ## Entwicklung
 
 ```sh
