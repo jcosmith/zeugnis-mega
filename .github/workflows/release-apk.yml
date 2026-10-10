@@ -8,7 +8,7 @@ on:
       version:
         description: 'Versions-Tag für das Release, z. B. v0.1.0'
         required: true
-        default: 'v0.1.0'
+        default: 'v0.2.0'
 
 permissions:
   contents: write
@@ -28,7 +28,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
-      - run: flutter build apk --release
+      - run: flutter build apk --release --target-platform android-arm64
       - name: APK umbenennen
         env:
           VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
@@ -52,4 +52,4 @@ jobs:
             Android-APK des Zeugnis-Assistenten.
 
             Installation: APK auf dem Android-Gerät öffnen und die Installation aus unbekannten Quellen erlauben.
-            Das Sprachmodell läuft auf einem Rechner im selben Netzwerk: dort `OLLAMA_HOST=0.0.0.0 ollama serve` starten, `ollama pull mistral-nemo` ausführen und in der App unter Einstellungen die Adresse `http://<IP-des-Rechners>:11434` eintragen.
+            Das Sprachmodell (Qwen3-4B-Instruct, Apache 2.0) läuft direkt auf dem Handy. Beim ersten Formulieren wird es einmalig heruntergeladen (ca. 2,5 GB, am besten im WLAN); danach funktioniert alles offline. Empfohlen: Android 10 oder neuer, mindestens 6 GB Arbeitsspeicher.

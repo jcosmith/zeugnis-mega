@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/llm_settings.dart';
 import '../services/llm_client.dart';
 import '../services/storage.dart';
+import '../widgets/geraete_modell_karte.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.state});
@@ -37,13 +38,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _providerWechseln(LlmProvider p) {
     final url = switch (p) {
+      LlmProvider.geraet => _s.baseUrl,
       LlmProvider.ollama => LlmSettings.defaultOllamaUrl,
       LlmProvider.openAiCompatible => 'http://localhost:1234/v1',
     };
+    final model = switch (p) {
+      LlmProvider.geraet => LlmSettings.defaultGeraeteModell,
+      _ when _s.provider == LlmProvider.geraet => LlmSettings.defaultModel,
+      _ => _s.model,
+    };
     _url.text = url;
+    _model.text = model;
     _modelle = [];
     _testErgebnis = null;
-    _setze(_s.copyWith(provider: p, baseUrl: url));
+    _setze(_s.copyWith(provider: p, baseUrl: url, model: model));
   }
 
   Future<void> _testen() async {
@@ -74,6 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final geraet = _s.provider == LlmProvider.geraet;
     return Scaffold(
       appBar: AppBar(title: const Text('Sprachmodell')),
       body: Center(
@@ -84,41 +93,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Card(
                 color: theme.colorScheme.secondaryContainer,
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
-                    'Empfohlen: Ollama mit einem offenen Modell wie „mistral-nemo“ '
-                    '(Apache-2.0-Lizenz, gutes Deutsch, läuft auf üblichen Laptops '
-                    'mit 16 GB RAM). Das ist kostenlos und die Schülerdaten '
-                    'verlassen den Rechner nicht.\n\n'
-                    'Einrichtung: Ollama von ollama.com installieren und einmalig '
-                    '„ollama pull mistral-nemo“ ausführen. Alternativen: '
-                    '„qwen3:8b“ (kleiner) oder „mistral-small3.2“ (besser, braucht '
-                    'mehr Speicher).',
+                    geraet
+                        ? 'Empfohlen: Das offene Modell Qwen3-4B-Instruct '
+                              '(Apache-2.0-Lizenz, gutes Deutsch) läuft direkt '
+                              'auf diesem Gerät. Das ist kostenlos, braucht kein '
+                              'Konto und die Schülerdaten verlassen das Gerät '
+                              'nicht. Ein Text dauert auf dem Handy etwa eine '
+                              'Minute; empfohlen sind Geräte mit mindestens '
+                              '6 GB Arbeitsspeicher.'
+                        : 'Ollama oder ein OpenAI-kompatibler Endpunkt mit einem '
+                              'offenen Modell, z. B. „mistral-nemo“. Einrichtung: '
+                              'Ollama von ollama.com installieren und einmalig '
+                              '„ollama pull mistral-nemo“ ausführen.',
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              SegmentedButton<LlmProvider>(
-                segments: [
-                  for (final p in LlmProvider.values)
-                    ButtonSegment(value: p, label: Text(p.label)),
-                ],
-                selected: {_s.provider},
-                onSelectionChanged: (sel) => _providerWechseln(sel.first),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _url,
-                decoration: InputDecoration(
-                  labelText: 'Adresse',
-                  helperText: _s.provider == LlmProvider.ollama
-                      ? 'Standard: ${LlmSettings.defaultOllamaUrl}'
-                      : 'Basis-URL inkl. /v1, z. B. LM Studio: http://localhost:1234/v1',
-                  border: const OutlineInputBorder(),
+              DropdownButtonFormField<LlmProvider>(
+                initialValue: _s.provider,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Wo läuft das Sprachmodell?',
+                  border: OutlineInputBorder(),
                 ),
-                onChanged: (v) => _setze(_s.copyWith(baseUrl: v.trim())),
+                items: [
+                  for (final p in LlmProvider.values)
+                    DropdownMenuItem(value: p, child: Text(p.label)),
+                ],
+                onChanged: (p) => _providerWechseln(p!),
               ),
+              if (geraet) ...[
+                const SizedBox(height: 16),
+                GeraeteModellKarte(quelle: _s.model),
+              ] else ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _url,
+                  decoration: InputDecoration(
+                    labelText: 'Adresse',
+                    helperText: _s.provider == LlmProvider.ollama
+                        ? 'Standard: ${LlmSettings.defaultOllamaUrl}'
+                        : 'Basis-URL inkl. /v1, z. B. LM Studio: http://localhost:1234/v1',
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (v) => _setze(_s.copyWith(baseUrl: v.trim())),
+                ),
+              ],
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,9 +149,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Expanded(
                     child: TextField(
                       controller: _model,
-                      decoration: const InputDecoration(
-                        labelText: 'Modell',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: geraet ? 'Modellquelle (GGUF)' : 'Modell',
+                        helperText: geraet
+                            ? 'hf://…, URL oder Dateipfad; nur bei Bedarf ändern'
+                            : null,
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (v) => _setze(_s.copyWith(model: v.trim())),
                     ),
@@ -185,21 +211,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (v) => _setze(_s.copyWith(anonymisieren: v)),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  FilledButton.icon(
-                    onPressed: _testLaeuft ? null : _testen,
-                    icon: _testLaeuft
-                        ? const SizedBox.square(
-                            dimension: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.wifi_tethering),
-                    label: const Text('Verbindung testen'),
-                  ),
-                ],
-              ),
-              if (_testErgebnis != null) ...[
+              if (!geraet)
+                Row(
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _testLaeuft ? null : _testen,
+                      icon: _testLaeuft
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.wifi_tethering),
+                      label: const Text('Verbindung testen'),
+                    ),
+                  ],
+                ),
+              if (!geraet && _testErgebnis != null) ...[
                 const SizedBox(height: 12),
                 Text(_testErgebnis!),
               ],

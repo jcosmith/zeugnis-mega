@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
+
 enum LlmProvider {
+  geraet('Auf diesem Gerät'),
   ollama('Ollama (lokal)'),
   openAiCompatible('OpenAI-kompatibler Endpunkt');
 
@@ -8,9 +11,10 @@ enum LlmProvider {
 
 /// Einstellungen für das Sprachmodell.
 ///
-/// Standard ist ein lokal über Ollama laufendes, offenes Modell
-/// (Mistral NeMo, Apache-2.0-Lizenz): kostenlos, ohne Konto und ohne dass
-/// Schülerdaten den Rechner verlassen.
+/// Standard ist ein offenes Modell, das direkt auf dem Gerät läuft
+/// (Qwen3-4B-Instruct, Apache-2.0-Lizenz): kostenlos, offline, ohne Konto
+/// und ohne dass Schülerdaten das Gerät verlassen. Im Browser, wo das nicht
+/// zuverlässig geht, ist ein lokales Ollama mit Mistral NeMo voreingestellt.
 class LlmSettings {
   const LlmSettings({
     this.provider = LlmProvider.ollama,
@@ -20,6 +24,14 @@ class LlmSettings {
     this.temperature = 0.4,
     this.anonymisieren = true,
   });
+
+  /// Modell direkt auf dem Gerät.
+  const LlmSettings.geraet()
+    : this(provider: LlmProvider.geraet, model: defaultGeraeteModell);
+
+  /// Voreinstellung für die aktuelle Plattform.
+  factory LlmSettings.standard() =>
+      kIsWeb ? const LlmSettings() : const LlmSettings.geraet();
 
   factory LlmSettings.fromJson(Map<String, dynamic> json) {
     final providerName = json['provider'] as String?;
@@ -38,6 +50,11 @@ class LlmSettings {
 
   static const defaultOllamaUrl = 'http://localhost:11434';
   static const defaultModel = 'mistral-nemo';
+
+  /// Qwen3-4B-Instruct-2507 (Apache 2.0), 4-Bit-quantisiert, ca. 2,5 GB.
+  static const defaultGeraeteModell =
+      'hf://unsloth/Qwen3-4B-Instruct-2507-GGUF/'
+      'Qwen3-4B-Instruct-2507-Q4_K_M.gguf';
 
   final LlmProvider provider;
   final String baseUrl;
@@ -62,7 +79,12 @@ class LlmSettings {
     anonymisieren: anonymisieren ?? this.anonymisieren,
   );
 
+  /// Version des gespeicherten Formats; ältere Einstellungen ohne Version
+  /// stammen aus der Zeit vor dem Modell auf dem Gerät.
+  static const formatVersion = 2;
+
   Map<String, dynamic> toJson() => {
+    'v': formatVersion,
     'provider': provider.name,
     'baseUrl': baseUrl,
     'model': model,

@@ -4,6 +4,8 @@ import 'package:zeugnis_mega/models/zeugnis.dart';
 import 'package:zeugnis_mega/services/export.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('Neues Zeugnis enthält alle Standardfächer', () {
     final z = Zeugnis.neu(id: 'x');
     expect(z.faecher.length, standardFaecher.length);

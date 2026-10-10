@@ -40,6 +40,8 @@ dependencies:
   shared_preferences: ^2.5.6
   pdf: ^3.13.1
   printing: ^5.15.1
+  llamadart: ^0.11.1
+  llamadart_llama_cpp_flutter: ^0.0.21
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +64,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/fonts/Roboto-Regular.ttf
+    - assets/fonts/Roboto-Bold.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -93,3 +98,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+hooks:
+  user_defines:
+    llamadart:
+      llamadart_native_runtimes: [llama_cpp]

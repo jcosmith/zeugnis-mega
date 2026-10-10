@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/curriculum_nrw_ge.dart';
+import '../models/llm_settings.dart';
 import '../models/zeugnis.dart';
 import '../services/llm_client.dart';
 import '../services/storage.dart';
 import '../services/zeugnis_generator.dart';
+import '../widgets/geraete_modell_karte.dart';
 import '../widgets/synced_text_field.dart';
 import 'preview_screen.dart';
 
@@ -58,7 +60,16 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  Future<bool> _fachErzeugen(FachEintrag fach) async {
+  /// Stellt sicher, dass ein Modell auf dem Gerät geladen ist, bevor
+  /// formuliert wird; beim ersten Mal mit sichtbarem Download.
+  Future<bool> _modellBereit() async {
+    final s = widget.state.settings;
+    if (s.provider != LlmProvider.geraet) return true;
+    return stelleGeraeteModellBereit(context, s.model);
+  }
+
+  Future<bool> _fachErzeugen(FachEintrag fach, {bool geprueft = false}) async {
+    if (!geprueft && !await _modellBereit()) return false;
     setState(() => _laeuft.add(fach));
     try {
       final text = await _generator.fachText(z, fach);
@@ -73,7 +84,8 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _bemerkungErzeugen() async {
+  Future<void> _bemerkungErzeugen({bool geprueft = false}) async {
+    if (!geprueft && !await _modellBereit()) return;
     setState(() => _laeuft.add(null));
     try {
       z.bemerkungText = await _generator.bemerkungText(z);
@@ -116,12 +128,15 @@ class _EditorScreenState extends State<EditorScreen> {
       );
       if (ok != true) return;
     }
+    if (!mounted || !await _modellBereit()) return;
     setState(() => _alleLaufen = true);
-    if (z.bemerkungStichworte.trim().isNotEmpty) await _bemerkungErzeugen();
+    if (z.bemerkungStichworte.trim().isNotEmpty) {
+      await _bemerkungErzeugen(geprueft: true);
+    }
     // Nacheinander, damit ein lokales Modell nicht überlastet wird.
     for (final f in offen) {
       if (!mounted) return;
-      if (!await _fachErzeugen(f)) break;
+      if (!await _fachErzeugen(f, geprueft: true)) break;
     }
     if (mounted) setState(() => _alleLaufen = false);
   }

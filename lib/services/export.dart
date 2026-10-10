@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
+
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -39,7 +41,13 @@ String zeugnisAlsText(Zeugnis z) {
 }
 
 Future<Uint8List> zeugnisAlsPdf(Zeugnis z) async {
-  final doc = pw.Document(title: 'Zeugnis ${z.titel}');
+  // Roboto statt der PDF-Standardschrift, damit „“, – und Umlaute sicher
+  // dargestellt werden.
+  final theme = pw.ThemeData.withFont(
+    base: pw.Font.ttf(await rootBundle.load('assets/fonts/Roboto-Regular.ttf')),
+    bold: pw.Font.ttf(await rootBundle.load('assets/fonts/Roboto-Bold.ttf')),
+  );
+  final doc = pw.Document(title: 'Zeugnis ${z.titel}', theme: theme);
   doc.addPage(
     pw.MultiPage(
       pageFormat: PdfPageFormat.a4,

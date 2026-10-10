@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/llm_settings.dart';
+import 'on_device_llm.dart';
 
 class LlmException implements Exception {
   LlmException(this.message);
@@ -21,6 +22,8 @@ abstract class LlmClient {
 
   factory LlmClient.fromSettings(LlmSettings settings, {http.Client? http}) {
     switch (settings.provider) {
+      case LlmProvider.geraet:
+        return GeraeteClient(settings);
       case LlmProvider.ollama:
         return OllamaClient(settings, httpClient: http);
       case LlmProvider.openAiCompatible:

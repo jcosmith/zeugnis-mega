@@ -17,7 +17,7 @@ class AppState extends ChangeNotifier {
 
   final SharedPreferences _prefs;
   final List<Zeugnis> _zeugnisse = [];
-  LlmSettings _settings = const LlmSettings();
+  LlmSettings _settings = LlmSettings.standard();
 
   List<Zeugnis> get zeugnisse {
     final list = List.of(_zeugnisse)
@@ -43,7 +43,18 @@ class AppState extends ChangeNotifier {
     final s = _prefs.getString(_settingsKey);
     if (s != null) {
       try {
-        _settings = LlmSettings.fromJson(jsonDecode(s) as Map<String, dynamic>);
+        final json = jsonDecode(s) as Map<String, dynamic>;
+        // Vor Version 2 war Ollama voreingestellt; auf das Modell auf dem
+        // Gerät umstellen, sofern Ollama nicht bewusst eingerichtet wurde.
+        final alteVoreinstellung =
+            json['v'] == null &&
+            json['provider'] == LlmProvider.ollama.name &&
+            json['baseUrl'] == LlmSettings.defaultOllamaUrl;
+        _settings = alteVoreinstellung
+            ? LlmSettings.standard().copyWith(
+                anonymisieren: json['anonymisieren'] as bool?,
+              )
+            : LlmSettings.fromJson(json);
       } catch (e) {
         debugPrint('Einstellungen konnten nicht geladen werden: $e');
       }

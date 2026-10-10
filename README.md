@@ -42,39 +42,41 @@ Quellen: [Lehrplannavigator NRW – Geistige Entwicklung](https://www.schulentwi
 
 ## Sprachmodell
 
-**Standard: [Ollama](https://ollama.com) mit `mistral-nemo`.**
+**Standard: Qwen3-4B-Instruct direkt auf dem Gerät** (über
+[llamadart](https://pub.dev/packages/llamadart) / llama.cpp).
 
-- *Offen und kostenlos:* Mistral NeMo (12 B) steht unter Apache-2.0-Lizenz,
-  Ollama ist Open Source. Kein Konto, keine Kosten pro Anfrage.
-- *Datenschutz:* Das Modell läuft lokal; Schülerdaten verlassen den Rechner nicht.
-- *Gutes Deutsch* bei vertretbarem Bedarf (~7 GB, läuft auf Laptops mit 16 GB RAM).
+- *Offen und kostenlos:* Qwen3-4B-Instruct-2507 steht unter Apache-2.0-Lizenz.
+  Kein Server, kein Konto, keine Kosten pro Anfrage.
+- *Datenschutz:* Das Modell läuft offline auf dem Handy oder Rechner;
+  Schülerdaten verlassen das Gerät nicht.
+- *Einmaliger Download:* ca. 2,5 GB (4-Bit-GGUF von Hugging Face), danach im
+  App-Cache. Empfohlen sind Geräte mit mindestens 6 GB Arbeitsspeicher; ein
+  Fachtext dauert auf dem Handy etwa eine Minute.
 
-Einrichtung:
+Andere GGUF-Modelle lassen sich in den Einstellungen als `hf://…`, URL oder
+Dateipfad eintragen.
 
-```sh
-ollama pull mistral-nemo
-```
-
-Alternativen, in den Einstellungen umstellbar: `qwen3:8b` (kleiner),
-`mistral-small3.2` (bessere Texte, mehr Speicher). Statt Ollama funktioniert
+Alternativ (z. B. im Browser, wo das Modell auf dem Gerät nicht zuverlässig
+läuft): **[Ollama](https://ollama.com)** mit `mistral-nemo` (Apache 2.0) oder
 jeder **OpenAI-kompatible Endpunkt** (LM Studio, llama.cpp-Server, vLLM oder ein
-gehosteter Anbieter offener Modelle). Für Endpunkte außerhalb des eigenen Rechners
-ist die Option „Vornamen nicht an das Modell senden“ standardmäßig an: Der Name
-wird durch `[NAME]` ersetzt und erst in der App wieder eingesetzt.
+gehosteter Anbieter offener Modelle). Die Option „Vornamen nicht an das Modell
+senden“ ist standardmäßig an: Der Name wird durch `[NAME]` ersetzt und erst in
+der App wieder eingesetzt.
 
-Hinweise je Plattform:
+Hinweise für Ollama:
 
 - **Web:** Ollama muss Anfragen aus dem Browser erlauben, z. B.
   `OLLAMA_ORIGINS="*" ollama serve`.
-- **Android-Emulator:** Adresse `http://10.0.2.2:11434`. Auf einem echten Gerät
-  die IP des Rechners eintragen und Ollama mit `OLLAMA_HOST=0.0.0.0` starten.
+- **Android:** Adresse des Rechners eintragen und Ollama mit
+  `OLLAMA_HOST=0.0.0.0` starten.
 
 ## Android-APK
 
 Ein Tag `v*` (z. B. `v0.1.0`) oder ein manueller Start des Workflows baut über GitHub Actions eine APK und hängt sie an
 ein GitHub-Release (Workflow `release-apk.yml`). Die APK ist mit dem
 Debug-Schlüssel signiert: Sie lässt sich direkt installieren, ist aber nicht für
-den Play Store gedacht.
+den Play Store gedacht. Gebaut wird für arm64 (praktisch alle aktuellen
+Android-Handys, ab Android 10).
 
 ## Entwicklung
 
