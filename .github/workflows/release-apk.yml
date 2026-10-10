@@ -4,6 +4,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versions-Tag für das Release, z. B. v0.1.0'
+        required: true
+        default: 'v0.1.0'
 
 permissions:
   contents: write
@@ -25,8 +30,10 @@ jobs:
       - run: flutter test
       - run: flutter build apk --release
       - name: APK umbenennen
+        env:
+          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
         run: |
-          name="zeugnis-assistent-${GITHUB_REF_NAME//\//-}.apk"
+          name="zeugnis-assistent-${VERSION}.apk"
           mv build/app/outputs/flutter-apk/app-release.apk "$name"
           echo "APK=$name" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
@@ -34,9 +41,11 @@ jobs:
           name: apk
           path: ${{ env.APK }}
       - name: GitHub-Release mit APK
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Zeugnis-Assistent ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
           files: ${{ env.APK }}
           prerelease: true
           body: |

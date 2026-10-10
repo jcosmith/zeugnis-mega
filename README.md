@@ -71,7 +71,7 @@ Hinweise je Plattform:
 
 ## Android-APK
 
-Ein Tag `v*` (z. B. `v0.1.0`) baut über GitHub Actions eine APK und hängt sie an
+Ein Tag `v*` (z. B. `v0.1.0`) oder ein manueller Start des Workflows baut über GitHub Actions eine APK und hängt sie an
 ein GitHub-Release (Workflow `release-apk.yml`). Die APK ist mit dem
 Debug-Schlüssel signiert: Sie lässt sich direkt installieren, ist aber nicht für
 den Play Store gedacht.
