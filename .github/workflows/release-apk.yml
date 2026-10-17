@@ -1,0 +1,59 @@
+name: APK veröffentlichen
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versions-Tag für das Release, z. B. v0.1.0'
+        required: true
+        default: 'v0.2.0'
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter build apk --release --target-platform android-arm64
+      - name: APK umbenennen
+        env:
+          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+        run: |
+          name="zeugnis-assistent-${VERSION}.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk "$name"
+          echo "APK=$name" >> "$GITHUB_ENV"
+      - name: Prüfen, dass llama.cpp in der APK steckt
+        run: |
+          unzip -l "$APK" | grep '\.so$'
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/.*llama.*\.so$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: ${{ env.APK }}
+      - name: GitHub-Release mit APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Zeugnis-Assistent ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+          files: ${{ env.APK }}
+          prerelease: true
+          body: |
+            Android-APK des Zeugnis-Assistenten.
+
+            Installation: APK auf dem Android-Gerät öffnen und die Installation aus unbekannten Quellen erlauben.
+            Das Sprachmodell (Qwen3-4B-Instruct, Apache 2.0) läuft direkt auf dem Handy. Beim ersten Formulieren wird es einmalig heruntergeladen (ca. 2,5 GB, am besten im WLAN); danach funktioniert alles offline. Empfohlen: Android 10 oder neuer, mindestens 6 GB Arbeitsspeicher.
